@@ -28,6 +28,7 @@ MYSQLPASSWD=
 BACKUPFILE=
 RESTORECONFIG=0
 VERBOSE=0
+OUTPUT=
 
 
 #_-_-_-_-_-_-_-SETUP FUNCTIONS-_-_-_-_-_-_-_#
@@ -408,6 +409,11 @@ function showDialog()
 	dialog --title "Jeremy's Awsome Install Script" --backtitle "$SCRIPT_TITLE" --msgbox "\n$@" 12 $DIALOG_WIDTH
 }
 
+function showInput()
+{
+  dialog --title "Jeremy's Awsome Install Script" --backtitle "$SCRIPT_TITLE" --inputbox "\n$@" 8 $DIALOG_WIDTH
+}
+
 function createFile()
 {
   FILE="$1"
@@ -594,6 +600,7 @@ done
 
 clear
 createFile "$LOG_FILE" 0 1
+showInput "Type Something In Here Jackass" 2>$OUTPUT
 echo "Installing Initial Requirements....."
 installRequirements
 echo "Loading installer..."
