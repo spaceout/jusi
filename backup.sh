@@ -600,7 +600,7 @@ done
 
 clear
 createFile "$LOG_FILE" 0 1
-showInput "Type Something In Here Jackass" 2>$OUTPUT
+$OUTPUT=showInput "Type Something In Here Jackass"
 echo "Installing Initial Requirements....."
 installRequirements
 echo "Loading installer..."
