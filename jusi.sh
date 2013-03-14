@@ -20,7 +20,7 @@ HOSTNAME=`hostname`
 BACKUPNAME=backup-$(date +%Y-%m-%d)
 BACKUPDIR=/home/$USER/backup
 USER="jemily"
-SMBTVSHOW="//bender/tvshows"
+SMB_TVSHOWSHARE="//bender/tvshows"
 SMBUSER="media"
 SMBPASSWD="m3d1a"
 USER=
@@ -224,7 +224,7 @@ function installSamba()
   #automount tvshow share
   showInfo "Setting remote tvshow share to automount"
   sudo mkdir /mnt/tvshows > /dev/null 2>&1
-  echo "$SMBTVSHOW  /mnt/tvshows  cifs  username=$SMBUSER,password=$SMBPASSWD 0 0" | sudo tee -a /etc/fstab
+  echo "$SMB_TVSHOWSHARE  /mnt/tvshows  cifs  username=$SMBUSER,password=$SMBPASSWD 0 0" | sudo tee -a /etc/fstab
   sudo mount -a > /dev/null 2>&1
 }
 
