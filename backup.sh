@@ -412,7 +412,7 @@ function showDialog()
 function showInput()
 {
   OUTPUT=
-  TEMPFILE=`mktemp jusi-xxx`
+  TEMPFILE=`mktemp jusi-XXX`
   dialog --title "Jeremy's Awsome Install Script" --backtitle "$SCRIPT_TITLE" --inputbox "\n$@" 8 $DIALOG_WIDTH 2>$TEMPFILE
   OUTPUT=`cat $TEMPFILE`
   rm $TEMPFILE
@@ -604,9 +604,6 @@ done
 
 clear
 createFile "$LOG_FILE" 0 1
-showInput "Type Something In Here Jackass"
-echo $OUTPUT
-exit
 echo "Installing Initial Requirements....."
 installRequirements
 echo "Loading installer..."
