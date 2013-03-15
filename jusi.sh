@@ -225,7 +225,7 @@ function configureSambaDownloader()
 {
   #prompt for users password if not passed in from CLI
   if [ -z $USERPASSWORD ]; then
-    showInput "please enter $USER's password"
+    showInput "please enter `echo $USER` password"
     USERPASSWORD=$OUTPUT
   fi
 
@@ -246,13 +246,13 @@ function configureSambaDownloader()
 
   #prompt for SMB client username if not passed in from CLI
   if [ -z $SMBCLIENTUSER ]; then
-    showInput "please enter $USER's password"
+    showInput "please enter SMB Client username"
     SMBCLIENTUSER=$OUTPUT
   fi
 
   #prompt for SMB client password if not passed in from CLI
   if [ -z $SMBCLIENTPASSWD ]; then
-    showInput "please enter $USER's password"
+    showInput "please enter SMB Client password"
     SMBCLIENTPASSWD=$OUTPUT
   fi
 
