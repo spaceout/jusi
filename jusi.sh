@@ -17,19 +17,20 @@ LOG_FILE=$HOME_DIRECTORY"installation.log"
 DIALOG_WIDTH=70
 SCRIPT_TITLE="Jeremy's Ultimate Setup Script"
 HOSTNAME=`hostname`
-BACKUPNAME=backup-$(date +%Y-%m-%d)
+BACKUPNAME=$HOSTNAME-backup-$(date +%Y-%m-%d)
 BACKUPDIR=/home/$USER/backup
 USER="jemily"
 SMB_TVSHOWSHARE="//bender/tvshows"
-SMBUSER="media"
-SMBPASSWD="m3d1a"
+SMBCLIENTUSER="media"
+SMBCLIENTPASSWD="m3d1a"
 USER=
+USERPASSWORD=
 MYSQLPASSWD=
 BACKUPFILE=
 RESTORECONFIG=0
 VERBOSE=0
 OUTPUT=
-
+XBMCDBNAME=MyVideos75
 
 #_-_-_-_-_-_-_-SETUP FUNCTIONS-_-_-_-_-_-_-_#
 
@@ -206,19 +207,42 @@ function backupFilebot()
 
 function installSamba()
 {
+
   #intall requirements
   showInfo "Installing Samba Requirements"
   sudo apt-get install -y samba cifs-utils > /dev/null 2>&1
 
-  #create share
-  showInfo "Creating Samba Share for Finished"
+}
+
+function restoreSamba()
+{
+  
+  sudo service smbd stop
+  sudo cp /home/$USER/backup/samba/smb.conf /etc/samba/smb.conf  > /dev/null 2>&1
+  sudo service smbd start
+}
+
+function configureSambaDownloader()
+{
+  #prompt for users password if not passed in from CLI
+  if [ -z $USERPASSWORD ]; then
+    showInput "please enter $USER's password"
+    USERPASSWORD=$OUTPUT
+  fi
+
+  #create samba user
+  showInfo "Creating SMB User $USER"
+  printf "$USERPASSWORD\n$USERPASSWORD\n" | smbpasswd -a -s $USER
+
+  #create finished share
+  showInfo "Creating Finished Share"
+  sudo service smbd stop > /dev/null 2>&1
   echo "
   [finished]
     path = /home/$USER/finished/
     valid users = $USER
     write list = $USER
   " | sudo tee -a /etc/samba/smb.conf > /dev/null 2>&1
-  sudo service smbd stop > /dev/null 2>&1
   sudo service smbd start > /dev/null 2>&1
 
   #automount tvshow share
@@ -232,7 +256,7 @@ function backupSamba()
 {
   showInfo "Backing Up Samba"
   mkdir $BACKUPDIR/samba > /dev/null 2>&1
-  sudo cp -R /etc/samba/smb.conf $BACKUPDIR/samba > /dev/null 2>&1
+  sudo cp /etc/samba/smb.conf $BACKUPDIR/samba > /dev/null 2>&1
 }
 
 ########
@@ -272,6 +296,12 @@ function installJemuby()
 
 function installMysqlXBMC()
 {
+  #prompt for mysql root password if not passed in from CLI
+  if [ -z $MYSQLPASSWD ]; then
+    showInput "please enter mysql root password"
+    MYSQLPASSWD=$OUTPUT
+  fi
+
   #install requirements
   showInfo "Installing mySQL and phpmyadmin"
   export DEBIAN_FRONTEND=noninteractive
@@ -286,11 +316,11 @@ function restoreXBMCDB()
   showInfo "Creating XBMC user and Databases"
   mysql -u root --password=$MYSQLPASSWD -e "CREATE USER 'xbmc' IDENTIFIED BY 'xbmc';" > /dev/null 2>&1
 	mysql -u root --password=$MYSQLPASSWD -e "GRANT ALL ON *.* TO 'xbmc';" > /dev/null 2>&1
-	mysql -u root --password=$MYSQLPASSWD -e "CREATE DATABASE MyVideos75;" > /dev/null 2>&1
+	mysql -u root --password=$MYSQLPASSWD -e "CREATE DATABASE $XBMCDBNAME;" > /dev/null 2>&1
 
   #restore XBMC database
   showInfo "Restoring XBMC Database from backup"
-  mysql -u root --password=$MYSQLPASSWD MyVideos75 < /home/jemily/backup/XBMC/MyVideos75.sql > /dev/null 2>&1
+  mysql -u root --password=$MYSQLPASSWD $XBMCDBNAME <  /home/$USER/backup/XBMC/$XBMCDBNAME.sql > /dev/null 2>&1
 }
 
 function backupXBMCDB()
@@ -298,7 +328,7 @@ function backupXBMCDB()
   showInfo "Backing Up XBMCDB"
   #PROMPT FOR MYSQL ROOT PASSWORD#
   mkdir $BACKUPDIR/XBMCDB > /dev/null 2>&1
-  mysqldump -u root --password=$MYSQLPASSWD MyVideos75 > $BACKUPDIR/XBMCDB/MyVideos75.sql > /dev/null 2>&1
+  mysqldump -u root --password=$MYSQLPASSWD $XBMCDBNAME > $BACKUPDIR/XBMCDB/$XBMCDBNAME.sql > /dev/null 2>&1
 }
 
 
@@ -418,6 +448,17 @@ function showInput()
   rm $TEMPFILE
 }
 
+function showYesNo()
+{
+  YESNO=
+  dialog --title "Delete file" --backtitle "$SCRIPT_TITLE" --yesno "\n$@" 7 $DIALOG_WIDTH 
+# Get exit status
+# 0 means yes
+# 1 means no
+# 255 means Esc
+  YESNO=$?
+}
+
 function createFile()
 {
   FILE="$1"
@@ -494,6 +535,7 @@ function selectInstallPrograms()
         ;;
       4)
         installSamba
+        configureSambaMenu
         ;;
       5)
         installMysqlXBMC
@@ -553,6 +595,23 @@ function selectBackupPrograms()
   done
   backupWrapUp
 }
+
+function configureSambaMenu()
+{
+  cmd=(dialog --backtitle "$SCRIPT_TITLE" --radiolist "Please select samba configuration" 15 $DIALOG_WIDTH 3)
+  options=(1 "Downloader (share out /user/home/finished/" on
+           2 "Server/Custom (restore smb.conf)" off)
+  choice=$("${cmd[@]}" "${options[@]}" 2>&1 >/dev/tty)
+  case ${choice//\"/} in
+    1)
+      configureSambaDownloader
+      ;;
+    2)
+      restoreSamba
+      ;;
+  esac
+}
+
 
 #######################
 #PROCESS CLI ARGUMENTS#
