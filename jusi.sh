@@ -19,10 +19,9 @@ SCRIPT_TITLE="Jeremy's Ultimate Setup Script"
 HOSTNAME=`hostname`
 BACKUPNAME=$HOSTNAME-backup-$(date +%Y-%m-%d)
 BACKUPDIR=/home/$USER/backup
-USER="jemily"
 SMB_TVSHOWSHARE="//bender/tvshows"
-SMBCLIENTUSER="media"
-SMBCLIENTPASSWD="m3d1a"
+SMBCLIENTUSER=
+SMBCLIENTPASSWD=
 USER=
 USERPASSWORD=
 MYSQLPASSWD=
@@ -232,7 +231,7 @@ function configureSambaDownloader()
 
   #create samba user
   showInfo "Creating SMB User $USER"
-  printf "$USERPASSWORD\n$USERPASSWORD\n" | smbpasswd -a -s $USER
+  printf "$USERPASSWORD\n$USERPASSWORD\n" | sudo smbpasswd -a -s $USER
 
   #create finished share
   showInfo "Creating Finished Share"
@@ -245,10 +244,22 @@ function configureSambaDownloader()
   " | sudo tee -a /etc/samba/smb.conf > /dev/null 2>&1
   sudo service smbd start > /dev/null 2>&1
 
+  #prompt for SMB client username if not passed in from CLI
+  if [ -z $SMBCLIENTUSER ]; then
+    showInput "please enter $USER's password"
+    SMBCLIENTUSER=$OUTPUT
+  fi
+
+  #prompt for SMB client password if not passed in from CLI
+  if [ -z $SMBCLIENTPASSWD ]; then
+    showInput "please enter $USER's password"
+    SMBCLIENTPASSWD=$OUTPUT
+  fi
+
   #automount tvshow share
   showInfo "Setting remote tvshow share to automount"
   sudo mkdir /mnt/tvshows > /dev/null 2>&1
-  echo "$SMB_TVSHOWSHARE  /mnt/tvshows  cifs  username=$SMBUSER,password=$SMBPASSWD 0 0" | sudo tee -a /etc/fstab
+  echo "$SMB_TVSHOWSHARE  /mnt/tvshows  cifs  username=$SMBCLIENTUSER,password=$SMBCLIENTPASSWD 0 0" | sudo tee -a /etc/fstab
   sudo mount -a > /dev/null 2>&1
 }
 
